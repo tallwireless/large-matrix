@@ -8,7 +8,7 @@ Display::Display(const int x, const int y) : GFXcanvas16(x,y) {
         uint8_t oePin      = 16;
 
 
-      matrix = new Adafruit_Protomatter( 256, 4, 1, rgbPins, 4, addrPins, clockPin, latchPin, oePin, false);
+      matrix = new Adafruit_Protomatter( 256, 3, 1, rgbPins, 4, addrPins, clockPin, latchPin, oePin, false);
       ProtomatterStatus status = matrix->begin();
     Serial.print("Protomatter begin() status: ");
     Serial.println((int)status);
@@ -16,6 +16,11 @@ Display::Display(const int x, const int y) : GFXcanvas16(x,y) {
     for(;;);
     }
 
+}
+
+void Display::clearBuffer(void){
+
+    writeFillRect(0,0,width(),height(),0);
 }
 void Display::updateMatrix(void){
     for( int w = 0; w < width(); w++) {

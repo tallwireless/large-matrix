@@ -10,6 +10,7 @@ class Display : public GFXcanvas16 {
     public:
         Display(const int x, const int y);
         void updateMatrix(void);
+        void clearBuffer(void);
         uint32_t matrixFrameCount(void) { return matrix->getFrameCount();};
 
     private:
