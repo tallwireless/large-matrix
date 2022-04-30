@@ -1,7 +1,4 @@
-
-
 #include "defines.h"
-
 
 #include "Display.h"
 
@@ -9,6 +6,7 @@
 #include <WiFiNINA.h>
 
 #include "TimeWidget.h"
+#include "ScrollingText.h"
 
 int16_t x = 0;
 int16_t y = 0;
@@ -18,9 +16,11 @@ int16_t y_1 = 0;
 
 uint16_t t_w = 0;
 uint16_t t_h = 0;
+
 uint16_t color565(uint8_t red, uint8_t green, uint8_t blue) {
-  return ((red & 0xF8) << 8) | ((green & 0xFC) << 3) | (blue >> 3);
+    return ((red & 0xF8) << 8) | ((green & 0xFC) << 3) | (blue >> 3);
 }
+
 uint16_t colors[] = { color565(32, 0, 0), color565(0, 32, 0), color565(0, 0, 32) };
 uint16_t color_white = color565(32, 32, 32);
 
@@ -31,7 +31,7 @@ char timeServer[] = "0.ca.pool.ntp.org";
 TimeChangeRule myEDT = {"EDT", Second, Sun, Mar, 2, -240};
 TimeChangeRule myEST = {"EST", First, Sun, Nov, 2, -300};
 Timezone *EDT;
-TimeChangeRule utcRule = {"UTC", Last, Sun, Mar, 1, 0}; 
+TimeChangeRule utcRule = {"UTC", Last, Sun, Mar, 1, 0};
 Timezone *UTC;
 
 
@@ -48,67 +48,67 @@ static bool gotCurrentTime = false;
 
 void update_Time(void)
 {
-  // Just get the correct time once
-  if (timeClient.updated())
-  {
-    Serial.println("********UPDATED********");
+    // Just get the correct time once
+    if (timeClient.updated())
+    {
+        Serial.println("********UPDATED********");
 
-    // set the system time to UTC
-    // warning: assumes that compileTime() returns US EDT
-    // adjust the followinif ((current_millis > TimeDisplay_timeout) || (TimeDisplay_timeout == 0))
+        // set the system time to UTC
+        // warning: assumes that compileTime() returns US EDT
+        // adjust the followinif ((current_millis > TimeDisplay_timeout) || (TimeDisplay_timeout == 0))
 
-    setTime(timeClient.getUTCEpochTime());
+        setTime(timeClient.getUTCEpochTime());
 
-    gotCurrentTime = true;
-  }
+        gotCurrentTime = true;
+    }
 }
 
 void check_status(void)
 {
-  // Update first time after 5s
-  static ulong checkstatus_timeout  = 5000L;
-  static ulong TimeDisplay_timeout   = 0;
+    // Update first time after 5s
+    static ulong checkstatus_timeout  = 5000L;
+    static ulong TimeDisplay_timeout   = 0;
 
-  static ulong current_millis;
+    static ulong current_millis;
 
-  // Display every 10s
+    // Display every 10s
 #define TIME_DISPLAY_INTERVAL       (10000L)
 
-  // Update RTC every hour if got correct time from NTP
+    // Update RTC every hour if got correct time from NTP
 #define TIME_UPDATE_INTERVAL         (3600 * 1000L)
 
-  // Retry updating RTC every 5s if haven't got correct time from NTP
+    // Retry updating RTC every 5s if haven't got correct time from NTP
 #define TIME_RETRY_INTERVAL          (3 * 1000L)
 
-  current_millis = millis();
+    current_millis = millis();
 
-  // Update Time every TIME_UPDATE_INTERVAL (3600) seconds.
-  if ((current_millis > checkstatus_timeout))
-  {
-    update_Time();
+    // Update Time every TIME_UPDATE_INTERVAL (3600) seconds.
+    if ((current_millis > checkstatus_timeout))
+    {
+        update_Time();
 
-    if (gotCurrentTime)
-    {
-      Serial.println("Time updated. Next update in seconds : " + String(TIME_UPDATE_INTERVAL / 1000, DEC));
-      checkstatus_timeout = current_millis + TIME_UPDATE_INTERVAL;
+        if (gotCurrentTime)
+        {
+            Serial.println("Time updated. Next update in seconds : " + String(TIME_UPDATE_INTERVAL / 1000, DEC));
+            checkstatus_timeout = current_millis + TIME_UPDATE_INTERVAL;
+        }
+        else
+        {
+            Serial.println("Retry Time update in seconds : " + String(TIME_RETRY_INTERVAL / 1000, DEC));
+            checkstatus_timeout = current_millis + TIME_RETRY_INTERVAL;
+        }
     }
-    else
-    {
-      Serial.println("Retry Time update in seconds : " + String(TIME_RETRY_INTERVAL / 1000, DEC));
-      checkstatus_timeout = current_millis + TIME_RETRY_INTERVAL;
-    }
-  }
 }
 
 void wifiConnect() {
-  while (WiFiStatus != WL_CONNECTED) {
-    Serial.print("Attempting to connect to WPA SSID: ");
-    Serial.println(ssid);
-    WiFiStatus = WiFi.begin(ssid, pass);
-    delay(1000);
-  }
-  Serial.print(F("You're connected to the network, IP = "));
-  Serial.println(WiFi.localIP());
+    while (WiFiStatus != WL_CONNECTED) {
+        Serial.print("Attempting to connect to WPA SSID: ");
+        Serial.println(ssid);
+        WiFiStatus = WiFi.begin(ssid, pass);
+        delay(1000);
+    }
+    Serial.print(F("You're connected to the network, IP = "));
+    Serial.println(WiFi.localIP());
 }
 
 
@@ -123,55 +123,49 @@ void wifiConnect() {
 
 
 void setup(void) {
-  Serial.begin(9600) ;
-  while (!Serial && millis() < 5000);
-  pinMode(13, OUTPUT);
-  digitalWrite(13, HIGH);
+    Serial.begin(115200) ;
+    while (!Serial && millis() < 5000);
+    pinMode(13, OUTPUT);
+    digitalWrite(13, HIGH);
 
-  canvas = new Display(128, 64);
-  Serial.print(F("\nStart NINA_TZ_NTP_Clock on ")); Serial.print(BOARD_NAME);
-  Serial.print(F(" with ")); Serial.print(SHIELD_TYPE); Serial.print("on a board type "); Serial.println(BOARD_TYPE);
-  Serial.println(NTPCLIENT_GENERIC_VERSION);
-  canvas->printText(0,0,"Wifi Connect...");
+    canvas = new Display(128, 64);
+    Serial.print(F("\nStart NINA_TZ_NTP_Clock on ")); Serial.print(BOARD_NAME);
+    Serial.print(F(" with ")); Serial.print(SHIELD_TYPE); Serial.print("on a board type "); Serial.println(BOARD_TYPE);
+    Serial.println(NTPCLIENT_GENERIC_VERSION);
+    canvas->printText(0,0,"Wifi Connect...");
 
-  wifiConnect();
-  //canvas->printText(0,8,"Connected: "+WiFi.localIP());
-  //delay(5000);
+    wifiConnect();
+    //canvas->printText(0,8,"Connected: "+WiFi.localIP());
+    //delay(5000);
 
-  Serial.print(F("\nStart NINA_TZ_NTP_Clock on ")); Serial.println(BOARD_NAME);
+    Serial.print(F("\nStart NINA_TZ_NTP_Clock on ")); Serial.println(BOARD_NAME);
 
-  EDT = new Timezone(myEDT, myEST);
-  UTC   = new Timezone(utcRule);
-  timeClient.begin();
-  Serial.println("Pause to begin...");
-  check_status();
+    EDT = new Timezone(myEDT, myEST);
+    UTC   = new Timezone(utcRule);
+    timeClient.begin();
+    Serial.println("Pause to begin...");
+    check_status();
 
+    canvas->printText(0,16,"widget registration..");
+    TimeWidget* temp = new TimeWidget(0, 0, 32, 64, EDT, color565(32, 0, 0));
+    canvas->registerWidget(temp);
+    temp = new TimeWidget(64, 0, 32, 64, UTC, color565(0, 0, 32));
+    canvas->registerWidget(temp);
+    ScrollingTextWidget* t = new ScrollingTextWidget(0, 24, 40, 128, "Hello there, Twitterverse!!", color_white, 4);
+    canvas->registerWidget(t);
 
-  
+    canvas->clearBuffer();
 
-  
-  canvas->printText(0,16,"widget registration..");
-  TimeWidget* temp = new TimeWidget(0, 0, 32, 64, EDT, color565(32, 0, 0));
-  canvas->registerWidget(temp);
-  temp = new TimeWidget(64, 0, 32, 64, UTC, color565(0, 0, 32));
-  canvas->registerWidget(temp);
-
-  canvas->clearBuffer();
-
-  Serial.println("STARTING....");
-  Serial.println("Write something?");
-
-
+    Serial.println("STARTING....");
+    Serial.println("Write something?");
 
 }
 int count = 0;
 void loop(void) {
-  digitalWrite(13, count++ % 2);
-  Serial.println("tick");
-  if (count % 5 == 0 || count == 0 ) {
-    timeClient.update();
-    check_status();
-  }
-  canvas->updateWidgets();
-  delay(500);
+    digitalWrite(13, count++ % 2);
+    if (count % 10 == 0 || count == 0 ) {
+        timeClient.update();
+        check_status();
+    }
+    canvas->updateWidgets();
 }
