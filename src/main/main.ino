@@ -9,7 +9,6 @@
 #include "ScrollingText.h"
 #include "TimeWidget.h"
 
-
 uint16_t color565(uint8_t red, uint8_t green, uint8_t blue) {
      return ((red & 0xF8) << 8) | ((green & 0xFC) << 3) | (blue >> 3);
 }
@@ -106,7 +105,7 @@ void wifiConnect() {
 // WiFiClient espClient;
 // int wifiStatus = -1;
 
-//MQTTPubSubClient mqttClient("192.168.0.173", 1883);
+// MQTTPubSubClient mqttClient("192.168.0.173", 1883);
 
 void setup(void) {
      Serial.begin(115200);
@@ -123,10 +122,10 @@ void setup(void) {
      Serial.print("on a board type ");
      Serial.println(BOARD_TYPE);
      Serial.println(NTPCLIENT_GENERIC_VERSION);
-     canvas->printText(0, 0, "Booting...",colors[2]);
+     canvas->printText(0, 0, "Booting...", colors[2]);
      canvas->printText(0, 8, "Wifi Connect....");
      wifiConnect();
-     canvas->printText(100,8, "done");
+     canvas->printText(100, 8, "done");
      delay(1000);
      // canvas->printText(0,8,"Connected: "+WiFi.localIP());
      // delay(5000);
@@ -138,10 +137,8 @@ void setup(void) {
      EDT = new Timezone(myEDT, myEST);
      UTC = new Timezone(utcRule);
      timeClient.begin();
-     canvas->printText(100,16, "done");
+     canvas->printText(100, 16, "done");
      delay(1000);
-
-
 
      canvas->printText(0, 24, "Widget Reg");
      TimeWidget *temp = new TimeWidget(0, 0, 32, 64, EDT, color565(32, 0, 0));
@@ -151,7 +148,7 @@ void setup(void) {
      ScrollingTextWidget *t = new ScrollingTextWidget(
          0, 24, 40, 128, "Hello there, Twitterverse!!", color_white, 1);
      canvas->registerWidget(t);
-     canvas->printText(100,24, "done");
+     canvas->printText(100, 24, "done");
      delay(1000);
      canvas->clearBuffer();
      canvas->printText(0, 32, "Ready?");
@@ -164,10 +161,10 @@ void setup(void) {
 int count = 0;
 bool led_state = true;
 void loop(void) {
-    if ( count++ % 10 == 0) {
-        led_state = !led_state;
-        digitalWrite(13, led_state);
-    }
+     if (count++ % 10 == 0) {
+          led_state = !led_state;
+          digitalWrite(13, led_state);
+     }
      if (count % 10 == 0 || count == 0) {
           timeClient.update();
           check_status();
