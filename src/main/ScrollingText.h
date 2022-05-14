@@ -3,6 +3,7 @@
 #include "Widget.h"
 //#include "fonts/FreeMono24pt7b.h"
 #include "fonts/FreeMonoBold24pt7b.h"
+#include "icons.h"
 class ScrollingTextWidget : public Widget {
 
    public:
@@ -15,7 +16,7 @@ class ScrollingTextWidget : public Widget {
 
           this->h = h;
           this->w = w;
-          update_interval = 25;
+          update_interval = 10;
      };
 
      bool updateWidget(void) {
@@ -26,8 +27,6 @@ class ScrollingTextWidget : public Widget {
           clearWidget();
 
           textSetup();
-
-          Serial.printf("Printing at: (%d,%d)\n", text_x, text_y);
           canvas->setCursor(text_x--, text_y);
           canvas->print(text);
           textCleanup();
@@ -55,7 +54,8 @@ class ScrollingTextWidget : public Widget {
           canvas->getTextBounds(text, pos_x, pos_y, &x_1, &y_1, &text_width,
                                 &text_height);
           // Where are we going to put the text centered on the y
-          text_y = y + ((h - text_height) / 2) + (y - y_1);
+          offset = (y - y_1);
+          text_y = y + ((h - text_height) / 2) + offset;
           // start off screen and scroll across
           text_x = 128;
           textCleanup();
@@ -77,6 +77,7 @@ class ScrollingTextWidget : public Widget {
      uint16_t text_width = -1;
      int16_t text_y = -1;
      int16_t text_x = -1;
+     int16_t offset = -1;
      uint16_t h;
      uint16_t w;
 };

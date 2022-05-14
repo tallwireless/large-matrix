@@ -360,7 +360,7 @@
 // char ssid[] = "NotOz";        // your network SSID (name)
 // char pass[] = "dingdongthewitchisdead";        // your network password
 
-char ssid[] = "VM8238715";
-char pass[] = "h7qzNczXqypk";
+char ssid[] = "LinuxCats";
+char pass[] = "sophieisthecoolest";
 
 #endif // defines_h
