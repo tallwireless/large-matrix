@@ -1,6 +1,6 @@
 #include "defines.h"
 uint16_t color565(uint8_t red, uint8_t green, uint8_t blue) {
-    return ((red & 0xF8) << 8) | ((green & 0xFC) << 3) | (blue >> 3);
+    return ((red & 0xF8) << 8) | ((blue & 0xFC) << 3) | (green >> 3);
 }
 
 #include "Display.h"
@@ -13,6 +13,7 @@ uint16_t color565(uint8_t red, uint8_t green, uint8_t blue) {
 #include "ScrollingText.h"
 #include "TimeWidget.h"
 
+#include "icons.h"
 
 /*
  * Colors:
@@ -26,12 +27,15 @@ uint16_t color_white = color565(32, 32, 32);
 int WiFiStatus = WL_IDLE_STATUS;
 
 // Where to get the time information from
-char timeServer[] = "0.ca.pool.ntp.org";
+char timeServer[] = "us.pool.ntp.org";
 
 /* TimeZone Setup for setting up the clocks */
 TimeChangeRule myEDT = {"EDT", Second, Sun, Mar, 2, -240};
 TimeChangeRule myEST = {"EST", First, Sun, Nov, 2, -300};
 Timezone *EDT;
+TimeChangeRule myBST = {"Gary", Second, Sun, Mar, 2, 60};
+TimeChangeRule myUTC = {"Gary", First, Sun, Nov, 2, 0};
+Timezone *Gary;
 TimeChangeRule utcRule = {"UTC", Last, Sun, Mar, 1, 0};
 Timezone *UTC;
 
@@ -73,7 +77,7 @@ void check_status(void) {
 #define TIME_DISPLAY_INTERVAL (10000L)
 
     // Update RTC every hour if got correct time from NTP
-#define TIME_UPDATE_INTERVAL (3600 * 1000L)
+#define TIME_UPDATE_INTERVAL (60 * 1000L)
 
     // Retry updating RTC every 5s if haven't got correct time from NTP
 #define TIME_RETRY_INTERVAL (3 * 1000L)
@@ -131,7 +135,7 @@ void setup(void) {
     }
     macAddress += String(mac[5]);
 
-    canvas = new Display(128, 64);
+    canvas = new Display(128, 64, 3, 2);
     Serial.print(F("\nStart NINA_TZ_NTP_Clock on "));
     Serial.print(BOARD_NAME);
     Serial.print(F(" with "));
@@ -152,15 +156,15 @@ void setup(void) {
 
     canvas->printText(0, 16, "NTP Start Up");
     EDT = new Timezone(myEDT, myEST);
+    Gary = new Timezone(myBST, myUTC);
     UTC = new Timezone(utcRule);
     timeClient.begin();
     canvas->printText(100, 16, "done");
     delay(1000);
     canvas->printText(0, 24, "Widget Reg");
-    TimeWidget *temp = new TimeWidget(0, 0, 32, 64, EDT, color565(32, 0, 0));
-    canvas->registerWidget(temp);
-    temp = new TimeWidget(64, 0, 32, 64, UTC, color565(0, 0, 32));
-    canvas->registerWidget(temp);
+    canvas->registerWidget(new TimeWidget(EDT, color565(32, 0, 0)), 0, 0);
+    canvas->registerWidget(new TimeWidget(UTC, color565(0, 32, 0)), 0, 1);
+    canvas->registerWidget(new TimeWidget(Gary, color565(32, 0, 32)), 1, 1);
     canvas->printText(100, 24, "done");
     delay(1000);
 
@@ -168,19 +172,20 @@ void setup(void) {
     espClient.connect("67.219.182.209", 1883);
     mqttClient.begin(espClient);
     mqttClient.connect(macAddress, "charlesr", "frebre4w");
-    mqttClient.subscribe(
-        "clocks/messages", [](const String &payload, const size_t size) {
-            StaticJsonDocument<200> doc;
-            DeserializationError error = deserializeJson(doc, payload);
-            if(error) {
-                Serial.print(F("deserializeJson() failed: "));
-    Serial.println(error.f_str());
-    return;
-    }
-            ScrollingTextWidget *t = new ScrollingTextWidget(
-                0, 24, 40, 128, doc["msg"], colors[(int)doc["color"]], 1);
-            canvas->registerWidget(t);
-        });
+    mqttClient.subscribe("clocks/messages", [](const String &payload,
+                                               const size_t size) {
+        StaticJsonDocument<200> doc;
+        DeserializationError error = deserializeJson(doc, payload);
+        if (error) {
+            Serial.print(F("deserializeJson() failed: "));
+            Serial.println(error.f_str());
+            return;
+        }
+        ScrollingTextWidget *t =
+            new ScrollingTextWidget(doc["msg"], colors[(int)doc["color"]], 1);
+        Serial.println(payload);
+        canvas->registerWidget(t, 2, 0);
+    });
     canvas->printText(100, 32, "done");
     delay(1000);
 
@@ -196,13 +201,13 @@ int lastRun = millis();
 bool led_state = true;
 void loop(void) {
     if (millis() - lastRun > 1000) {
+        lastRun = millis();
         led_state = !led_state;
         digitalWrite(13, led_state);
-        timeClient.update();
-        check_status();
         mqttClient.update();
-        mqttClient.publish("clocks/"+macAddress+"/status", "I'm alive!");
-        lastRun = millis();
+        mqttClient.publish("clocks/" + macAddress + "/status", "I'm alive!");
     }
+    timeClient.update();
+    check_status();
     canvas->updateWidgets();
 }
