@@ -9,7 +9,7 @@ class Display {
   public:
     Display(const int x, const int y, const int row, const int col);
     void updateMatrix(void);
-    void clearBuffer(void) { canvas->writeFillRect(0, 0, height, width, 0); };
+    void clearBuffer(void) { canvas->writeFillRect(0, 0, width, height, 0); updateMatrix(); };
     void clearSpace(const int, const int, const int, const int);
     uint32_t matrixFrameCount(void) { return matrix->getFrameCount(); };
     void registerWidget(Widget *, const int row, const int col);

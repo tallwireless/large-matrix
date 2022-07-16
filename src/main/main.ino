@@ -170,7 +170,7 @@ void setup(void) {
     canvas->printText(0, 24, "Widget Reg");
     canvas->registerWidget(new TimeWidget(EDT, color565(32, 0, 0)), 0, 0);
     canvas->registerWidget(new TimeWidget(UTC, color565(0, 32, 0)), 0, 1);
-    canvas->registerWidget(new TimeWidget(Gary, color565(32, 0, 32)), 1, 1);
+    canvas->registerWidget(new TimeWidget(Gary, color565(32, 0, 32)), 1, 0);
     canvas->printText(100, 24, "done");
     delay(1000);
 
@@ -196,7 +196,7 @@ void setup(void) {
     delay(1000);
 
     mqttClient.subscribe("clocks/alerts", handleAlertsCallBack);
-    canvas->registerWidget(alert,2,1);
+    canvas->registerWidget(alert,1,1);
 
     canvas->clearBuffer();
     canvas->printText(0, 32, "Ready?");
@@ -206,14 +206,18 @@ void setup(void) {
     Serial.println("STARTING....");
     Serial.println("Write something?");
 }
-int lastRun = millis();
+int lastRun_1 = millis();
+int lastRun_60 = millis();
 bool led_state = true;
 void loop(void) {
-    if (millis() - lastRun > 1000) {
-        lastRun = millis();
+    if (millis() - lastRun_1 > 1000) {
+        lastRun_1 = millis();
         led_state = !led_state;
         digitalWrite(13, led_state);
         mqttClient.update();
+    }
+    if (millis() - lastRun_60 > 60000) {
+        lastRun_60 = millis();
         mqttClient.publish("clocks/" + macAddress + "/status", "I'm alive!");
     }
     timeClient.update();
