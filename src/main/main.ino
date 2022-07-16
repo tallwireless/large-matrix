@@ -4,7 +4,7 @@ uint16_t color565(uint8_t red, uint8_t green, uint8_t blue) {
 }
 
 #include "Display.h"
-
+#include "Alerts.h"
 #include <ArduinoJson.h>
 #include <MQTTPubSubClient_Generic.h>
 #include <NTPClient_Generic.h>
@@ -120,6 +120,12 @@ WiFiClient espClient;
 MQTTPubSubClient mqttClient;
 String macAddress("");
 
+
+Alerts *alert = new Alerts(&mqttClient);
+static void handleAlertsCallBack(const String &payload, const size_t size) {
+    alert->handleMQTTUpdate(payload, size);
+}
+
 void setup(void) {
     Serial.begin(115200);
     while (!Serial && millis() < 5000)
@@ -188,6 +194,9 @@ void setup(void) {
     });
     canvas->printText(100, 32, "done");
     delay(1000);
+
+    mqttClient.subscribe("clocks/alerts", handleAlertsCallBack);
+    canvas->registerWidget(alert,2,1);
 
     canvas->clearBuffer();
     canvas->printText(0, 32, "Ready?");
