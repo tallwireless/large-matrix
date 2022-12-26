@@ -360,7 +360,7 @@
 // char ssid[] = "NotOz";        // your network SSID (name)
 // char pass[] = "dingdongthewitchisdead";        // your network password
 
-char ssid[] = "NotOz";
-char pass[] = "dingdongthewitchisdead";
+char ssid[] = "TallWireless-IoT";
+char pass[] = "withyoumaythewirelessbe";
 
 #endif // defines_h
