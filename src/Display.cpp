@@ -1,0 +1,100 @@
+#include "Display.h"
+
+/*
+ * The Display will take the size of the screen, along with the number of rows
+ * and columns for screen.
+ */
+Display::Display(const int x, const int y, const int row, const int col) {
+
+    /* WIDGET GRID SETUP
+     * This is a 2D array for the grid of widgets on the display.
+     */
+        rows = row;
+    cols = col;
+    widgets = new Widget **[rows];
+    for (int i = 0; i < rows; i++) {
+        widgets[i] = new Widget *[cols];
+        for (int j = 0; j < cols; j++) {
+            widgets[i][j] = NULL;
+        }
+    }
+    widget_count = row * col;
+    /* END WIDGET GRID SETUP */
+
+    /* MATRIX SETUP
+     * This will setup the pins to talk with the HUB75 display. The status will
+     * printed on the serial port. If the setup fails, then it will not let the
+     * code continue executing.
+     * */
+
+    width = x;
+    height = y;
+    uint8_t rgbPins[] = {7, 8, 9, 10, 11, 12};
+    uint8_t addrPins[] = {17, 18, 19, 20};
+    uint8_t clockPin = 14;
+    uint8_t latchPin = 15;
+    uint8_t oePin = 16;
+    matrix = new Adafruit_Protomatter(256, 3, 1, rgbPins, 4, addrPins, clockPin,
+                                      latchPin, oePin, false);
+    ProtomatterStatus status = matrix->begin();
+    Serial.print("Protomatter begin() status: ");
+    Serial.println((int)status);
+    if (status != PROTOMATTER_OK) {
+        for (;;)
+            ;
+    }
+    /* END MATRIX SETUP */
+
+    /* VIRTUAL CANVAS
+     * Because of how the Protomatter handles the canvas, a standard size canvas
+     * is needed to abstract out the canvas for the widgets to write out their
+     * content.
+     */
+    canvas = new GFXcanvas16(x, y);
+    /* END VIRTUAL CANVAS */
+}
+
+#define WIDGET_HEIGHT 21
+#define WIDGET_WIDTH 64
+
+void Display::registerWidget(Widget *w, const int row, const int col) {
+    // Adding the widget to the grid, setting the virtual canvas, along with the
+    // display dimentions so the widget knows where to draw.
+    widgets[row][col] = w;
+    w->setCanvas(canvas);
+    w->setDimentions(col * WIDGET_WIDTH, row * WIDGET_HEIGHT, WIDGET_HEIGHT,
+                     WIDGET_WIDTH);
+}
+
+void Display::updateWidgets(void) {
+    // Run through all of the widgets and update the screen
+    for (int x = 0;     x < rows; x++) {
+        for (int y = 0; y < cols; y++) {
+            if (widgets[x][y] != NULL) {
+                if (!widgets[x][y]->updateWidget()) {
+                    Serial.printf("Removing widget from position (%d,%d)\n", x,
+                                  y);
+
+                    widgets[x][y]->clearWidget();
+                    delete (widgets[x][y]);
+                    widgets[x][y] = NULL;
+                }
+            }
+        }
+    }
+    updateMatrix();
+}
+
+void Display::updateMatrix(void) {
+    for (int w = 0; w < width; w++) {
+        for (int h = 0; h < height / 2; h++) {
+            // handle the upper side of the matrix
+            matrix->drawPixel((width - w) - 1, (height / 2) - h - 1,
+                              canvas->getPixel(w, h));
+            // handle the lower part of the canvas
+            matrix->drawPixel(w + 128, h, canvas->getPixel(w, h + height / 2));
+        }
+    }
+    // update the matrix
+    matrix->show();
+}
